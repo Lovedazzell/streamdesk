@@ -1,0 +1,117 @@
+{
+  "udp_port": 5005,
+  "cooldown_ms": 200,
+  "start_minimized": true,
+  "buttons": {
+    "BTN1": {
+      "label": "Button 1",
+      "action_type": "Open Folder in VS Code",
+      "action_value": "D:/ESP",
+      "color": "#7d0d82"
+    },
+    "BTN2": {
+      "label": "Button 2",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN3": {
+      "label": "Button 3",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN4": {
+      "label": "Button 4",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN5": {
+      "label": "Button 5",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN6": {
+      "label": "Button 6",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN7": {
+      "label": "Button 7",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN8": {
+      "label": "Button 8",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN9": {
+      "label": "Button 9",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN10": {
+      "label": "Button 10",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN11": {
+      "label": "Button 11",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN12": {
+      "label": "Button 12",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN13": {
+      "label": "Button 13",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN14": {
+      "label": "Button 14",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN15": {
+      "label": "Button 15",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    },
+    "BTN16": {
+      "label": "Button 16",
+      "action_type": "Do Nothing",
+      "action_value": "",
+      "color": "#2a2a3e"
+    }
+  },
+  "special": {
+    "MEDIA:PLAYPAUSE": {
+      "action_type": "Media: Play/Pause",
+      "action_value": ""
+    },
+    "MEDIA:NEXT": {
+      "action_type": "Media: Next Track",
+      "action_value": ""
+    },
+    "MEDIA:PREV": {
+      "action_type": "Media: Previous Track",
+      "action_value": ""
+    }
+  }
+}
