@@ -3705,3 +3705,67 @@ NotADirectoryError: [WinError 267] The directory name is invalid
 2026-10-05 12:22:47,955 [INFO] === UDP thread alive check (2s after start): True ===
 2026-10-05 12:25:10,781 [INFO] Config saved.
 2026-10-05 12:25:13,085 [INFO] Config saved.
+2026-10-05 12:28:11,976 [INFO] === StreamDesk starting ===
+2026-10-05 12:28:12,227 [INFO] === start_udp() called ===
+2026-10-05 12:28:12,227 [INFO] === _udp_running=False ===
+2026-10-05 12:28:12,227 [INFO] === _udp_running set to True, starting thread ... ===
+2026-10-05 12:28:12,228 [INFO] === UDP thread _loop() ENTERED ===
+2026-10-05 12:28:12,228 [INFO] === UDP thread started: <Thread(UDP, started daemon 12552)> ===
+2026-10-05 12:28:13,356 [DEBUG] Importing AvifImagePlugin
+2026-10-05 12:28:13,358 [DEBUG] Importing BlpImagePlugin
+2026-10-05 12:28:13,359 [DEBUG] Importing BmpImagePlugin
+2026-10-05 12:28:13,359 [DEBUG] Importing BufrStubImagePlugin
+2026-10-05 12:28:13,359 [DEBUG] Importing CurImagePlugin
+2026-10-05 12:28:13,360 [DEBUG] Importing DcxImagePlugin
+2026-10-05 12:28:13,361 [DEBUG] Importing DdsImagePlugin
+2026-10-05 12:28:13,364 [DEBUG] Importing EpsImagePlugin
+2026-10-05 12:28:13,365 [DEBUG] Importing FitsImagePlugin
+2026-10-05 12:28:13,367 [DEBUG] Importing FliImagePlugin
+2026-10-05 12:28:13,367 [DEBUG] Importing FpxImagePlugin
+2026-10-05 12:28:13,368 [DEBUG] Image: failed to import FpxImagePlugin: No module named 'olefile'
+2026-10-05 12:28:13,368 [DEBUG] Importing FtexImagePlugin
+2026-10-05 12:28:13,369 [DEBUG] Importing GbrImagePlugin
+2026-10-05 12:28:13,370 [DEBUG] Importing GifImagePlugin
+2026-10-05 12:28:13,370 [DEBUG] Importing GribStubImagePlugin
+2026-10-05 12:28:13,370 [DEBUG] Importing Hdf5StubImagePlugin
+2026-10-05 12:28:13,371 [DEBUG] Importing IcnsImagePlugin
+2026-10-05 12:28:13,373 [DEBUG] Importing IcoImagePlugin
+2026-10-05 12:28:13,374 [DEBUG] Importing ImImagePlugin
+2026-10-05 12:28:13,375 [DEBUG] Importing ImtImagePlugin
+2026-10-05 12:28:13,375 [DEBUG] Importing IptcImagePlugin
+2026-10-05 12:28:13,376 [DEBUG] Importing JpegImagePlugin
+2026-10-05 12:28:13,376 [DEBUG] Importing Jpeg2KImagePlugin
+2026-10-05 12:28:13,376 [DEBUG] Importing McIdasImagePlugin
+2026-10-05 12:28:13,377 [DEBUG] Importing MicImagePlugin
+2026-10-05 12:28:13,378 [DEBUG] Image: failed to import MicImagePlugin: No module named 'olefile'
+2026-10-05 12:28:13,378 [DEBUG] Importing MpegImagePlugin
+2026-10-05 12:28:13,379 [DEBUG] Importing MpoImagePlugin
+2026-10-05 12:28:13,381 [DEBUG] Importing MspImagePlugin
+2026-10-05 12:28:13,381 [DEBUG] Importing PalmImagePlugin
+2026-10-05 12:28:13,382 [DEBUG] Importing PcdImagePlugin
+2026-10-05 12:28:13,383 [DEBUG] Importing PcxImagePlugin
+2026-10-05 12:28:13,383 [DEBUG] Importing PdfImagePlugin
+2026-10-05 12:28:13,387 [DEBUG] Importing PixarImagePlugin
+2026-10-05 12:28:13,387 [DEBUG] Importing PngImagePlugin
+2026-10-05 12:28:13,388 [DEBUG] Importing PpmImagePlugin
+2026-10-05 12:28:13,388 [DEBUG] Importing PsdImagePlugin
+2026-10-05 12:28:13,388 [DEBUG] Importing QoiImagePlugin
+2026-10-05 12:28:13,389 [DEBUG] Importing SgiImagePlugin
+2026-10-05 12:28:13,390 [DEBUG] Importing SpiderImagePlugin
+2026-10-05 12:28:13,390 [DEBUG] Importing SunImagePlugin
+2026-10-05 12:28:13,391 [DEBUG] Importing TgaImagePlugin
+2026-10-05 12:28:13,392 [DEBUG] Importing TiffImagePlugin
+2026-10-05 12:28:13,392 [DEBUG] Importing WebPImagePlugin
+2026-10-05 12:28:13,394 [DEBUG] Importing WmfImagePlugin
+2026-10-05 12:28:13,394 [DEBUG] Importing XbmImagePlugin
+2026-10-05 12:28:13,395 [DEBUG] Importing XpmImagePlugin
+2026-10-05 12:28:13,396 [DEBUG] Importing XVThumbImagePlugin
+2026-10-05 12:28:13,338 [INFO] === UDP outer loop #1: attempting bind on 0.0.0.0:5005 ===
+2026-10-05 12:28:13,339 [INFO] Admin: True  |  Python 3.14.7
+2026-10-05 12:28:14,407 [INFO] === creating socket ===
+2026-10-05 12:28:14,518 [INFO] === socket created OK ===
+2026-10-05 12:28:14,520 [INFO] === SO_REUSEADDR set ===
+2026-10-05 12:28:14,522 [INFO] === BOUND to 0.0.0.0:5005 — now listening for ESP32 packets ===
+2026-10-05 12:28:15,339 [INFO] === UDP thread alive check (2s after start): True ===
+2026-10-05 12:28:18,748 [INFO] >>> EXECUTE: 'MEDIA:PLAYPAUSE'
+2026-10-05 12:28:18,749 [INFO] >>> SendInput SUCCESS vk=0xB3
