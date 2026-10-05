@@ -1,3 +1,5 @@
+@REM  install_and_run.bat
+
 @echo off
 setlocal enabledelayedexpansion
 title StreamDesk Installer & Launcher

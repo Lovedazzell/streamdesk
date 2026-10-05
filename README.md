@@ -1,76 +1,424 @@
 # StreamDesk
 
-A configurable macro-pad controller for Windows. Listens on UDP and executes actions like launching apps, controlling media, running scripts, and adjusting volume.
+StreamDesk is a Windows desktop companion for an ESP32 macro pad. It receives commands from the ESP32 over the local network and performs actions on the Windows PC.
+
+## Features
+
+* ESP32 macro-pad support
+* Windows system controls
+* Application launching
+* Media controls
+* Volume control
+* System tray support
+* Configurable buttons
+* Windows auto-start
+* Runs in the background
+* Logging
+* Settings UI
 
 ---
 
-## Quick Start
+# Requirements
 
-1. **First run — install everything:**
-   ```
-   Double-click install_and_run.bat
-   ```
-   This installs all Python packages and launches the app.
+* Windows 10 or Windows 11
+* Python 3.9+
+* ESP32 macro pad
+* Same local network for the ESP32 and Windows PC
 
-2. **Or run setup.py** for a guided install + desktop shortcut:
-   ```
-   python setup.py
-   ```
+Required Python packages:
 
----
-
-## Files
-
-| File | Purpose |
-|---|---|
-| `streamdesk.py` | Main application (GUI + UDP server) |
-| `setup.py` | One-click installer + shortcut creator |
-| `install_and_run.bat` | Batch installer / launcher |
-| `run_hidden.vbs` | Starts app silently at login (used by Task Scheduler) |
-| `streamdesk_config.json` | Your saved config (auto-created) |
-| `nircmd.exe` | Volume control utility (auto-downloaded) |
+```text
+pywin32
+pystray
+Pillow
+keyboard
+psutil
+requests
+```
 
 ---
 
-## UDP Commands
+# Project Files
 
-Send UTF-8 text over UDP to `<PC_IP>:5005`:
+```text
+StreamDesk/
+│
+├── streamdesk.py
+├── streamdesk_config.json
+│
+├── run_hidden.vbs
+├── run_as_admin.bat
+├── install_and_run.bat
+├── set_scheduler.bat
+│
+├── nircmd.exe
+└── streamdesk.log
+```
 
-| Command | Action |
-|---|---|
-| `BTN1` … `BTN16` | Trigger configured button |
-| `MEDIA:PLAYPAUSE` | Play / pause |
-| `MEDIA:NEXT` | Next track |
-| `MEDIA:PREV` | Previous track |
-| `VOL:75` | Set volume to 75% |
+## Important Files
+
+### `streamdesk.py`
+
+Main StreamDesk application.
+
+It contains:
+
+* GUI
+* ESP32 communication
+* System controls
+* Tray functionality
+* Settings
+* Configuration
+* Windows auto-start registration
 
 ---
 
-## Auto-start
+### `run_hidden.vbs`
 
-Open **Settings → Auto-start** and check the box. StreamDesk registers itself in Windows Task Scheduler to run at login.
+Silent launcher used by Windows Task Scheduler.
 
-To add the firewall rule (allows UDP on port 5005):  
-**Settings → Windows Firewall → Add Firewall Rule**  
-*(requires running as Administrator)*
+The scheduled task starts:
 
----
+```text
+wscript.exe
+    ↓
+run_hidden.vbs
+    ↓
+pythonw.exe
+    ↓
+streamdesk.py --tray
+```
 
-## Action Types
-
-- **Launch Application** — path to any .exe or shell command
-- **Open Folder in VS Code** — opens a folder in VS Code
-- **Run CMD Script / BAT file** — runs a .bat or .cmd in a new console
-- **Media: Play/Pause / Next / Prev** — system media keys
-- **YouTube: Forward/Rewind 10s** — sends J/L keys when YouTube is focused
-- **Set Volume** — 0–100 (requires nircmd.exe)
-- **Custom Command** — any shell command
+The `--tray` argument starts StreamDesk minimized to the Windows system tray.
 
 ---
 
-## Requirements
+### `run_as_admin.bat`
 
-- Python 3.9+
-- Windows 10/11
-- Packages: `pywin32`, `pystray`, `Pillow`, `keyboard`, `psutil`, `requests`
-  (all installed automatically)
+Manually starts StreamDesk with Administrator privileges.
+
+Use this when you want to launch the application manually as Administrator.
+
+---
+
+### `install_and_run.bat`
+
+Installs the required Python packages and starts StreamDesk.
+
+It also attempts to download `nircmd.exe` for volume-control functionality.
+
+---
+
+### `set_scheduler.bat`
+
+Configures Windows auto-start.
+
+This is the recommended way to manually configure or repair StreamDesk auto-start.
+
+Every time `set_scheduler.bat` is run, it:
+
+1. Checks for `run_hidden.vbs`
+2. Deletes the existing `StreamDesk` scheduled task
+3. Creates a new scheduled task
+4. Configures it to start at Windows logon
+5. Adds a 30-second startup delay
+6. Configures the task to run with highest privileges
+7. Uses `run_hidden.vbs` as the launcher
+8. Verifies the scheduled task
+
+Run:
+
+```text
+set_scheduler.bat
+```
+
+**Important:** Run it as **Administrator**.
+
+To run as Administrator:
+
+```text
+Right-click set_scheduler.bat
+        ↓
+Run as administrator
+```
+
+---
+
+# Windows Auto-Start
+
+StreamDesk uses **Windows Task Scheduler** for automatic startup.
+
+The scheduled task is named:
+
+```text
+StreamDesk
+```
+
+The startup flow is:
+
+```text
+Windows Login
+     ↓
+Task Scheduler
+     ↓
+StreamDesk task
+     ↓
+Wait 30 seconds
+     ↓
+wscript.exe
+     ↓
+run_hidden.vbs
+     ↓
+pythonw.exe
+     ↓
+streamdesk.py --tray
+     ↓
+StreamDesk runs in system tray
+```
+
+## Configure Auto-Start from StreamDesk
+
+Open:
+
+```text
+StreamDesk
+    → Settings
+        → Startup
+            → Start with Windows
+```
+
+When enabled, StreamDesk attempts to create the `StreamDesk` scheduled task automatically.
+
+If Windows permissions prevent the task from being created, use:
+
+```text
+set_scheduler.bat
+```
+
+and run it as Administrator.
+
+---
+
+# Check Auto-Start
+
+Open Command Prompt and run:
+
+```cmd
+schtasks /query /tn "StreamDesk" /v /fo list
+```
+
+If the task exists, Windows will display information such as:
+
+```text
+TaskName:       \StreamDesk
+Status:         Ready
+Task To Run:    wscript.exe ...
+Schedule Type:  At logon
+```
+
+If you see:
+
+```text
+ERROR: The system cannot find the file specified.
+```
+
+the `StreamDesk` scheduled task does not exist.
+
+Run:
+
+```text
+set_scheduler.bat
+```
+
+as Administrator to recreate it.
+
+---
+
+# Remove Auto-Start
+
+You can disable auto-start from:
+
+```text
+StreamDesk
+    → Settings
+        → Startup
+            → Start with Windows
+```
+
+Or manually remove the task using Command Prompt:
+
+```cmd
+schtasks /delete /tn "StreamDesk" /f
+```
+
+After deleting it, StreamDesk will no longer automatically start when Windows logs in.
+
+---
+
+# Manual Start
+
+To manually start StreamDesk:
+
+```text
+install_and_run.bat
+```
+
+or:
+
+```text
+run_as_admin.bat
+```
+
+---
+
+# Running in the System Tray
+
+When started by Windows Task Scheduler, StreamDesk is launched using:
+
+```text
+streamdesk.py --tray
+```
+
+This causes the main window to remain hidden and StreamDesk to run from the system tray.
+
+You can open the main window from the StreamDesk tray icon.
+
+---
+
+# Configuration
+
+StreamDesk stores configuration in:
+
+```text
+streamdesk_config.json
+```
+
+The application also writes logs to:
+
+```text
+streamdesk.log
+```
+
+---
+
+# Troubleshooting
+
+## Auto-start does not work
+
+First check:
+
+```cmd
+schtasks /query /tn "StreamDesk" /v /fo list
+```
+
+If the task does not exist, run:
+
+```text
+set_scheduler.bat
+```
+
+as Administrator.
+
+---
+
+## StreamDesk starts but the window is not visible
+
+This is expected when Windows starts StreamDesk.
+
+The scheduled task launches:
+
+```text
+streamdesk.py --tray
+```
+
+Check the Windows system tray for the StreamDesk icon.
+
+---
+
+## Python cannot be found
+
+`run_hidden.vbs` searches several common Python installation locations.
+
+It also attempts to locate:
+
+```text
+pythonw.exe
+```
+
+through the Windows PATH.
+
+If Python was installed in a custom location, update the Python paths inside:
+
+```text
+run_hidden.vbs
+```
+
+---
+
+## Check the scheduled task manually
+
+Open:
+
+```text
+Task Scheduler
+```
+
+by pressing:
+
+```text
+Win + R
+```
+
+and running:
+
+```text
+taskschd.msc
+```
+
+Look for:
+
+```text
+StreamDesk
+```
+
+under the scheduled tasks.
+
+---
+
+# Auto-Start Task Configuration
+
+The expected configuration is:
+
+| Setting            | Value               |
+| ------------------ | ------------------- |
+| Task name          | `StreamDesk`        |
+| Trigger            | At log on           |
+| Delay              | 30 seconds          |
+| Action             | `wscript.exe`       |
+| Script             | `run_hidden.vbs`    |
+| Run level          | Highest privileges  |
+| Battery            | Start if on battery |
+| Battery transition | Don't stop          |
+| Execution limit    | Unlimited           |
+
+---
+
+# Development
+
+Run StreamDesk directly with Python:
+
+```cmd
+python streamdesk.py
+```
+
+Run it in tray mode:
+
+```cmd
+python streamdesk.py --tray
+```
+
+---
+
+# License
+
+This project is for personal/internal use unless otherwise specified.

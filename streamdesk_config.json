@@ -4,82 +4,82 @@
   "start_minimized": true,
   "buttons": {
     "BTN1": {
-      "label": "Button 1",
-      "action_type": "Open Folder in VS Code",
+      "label": "YOUTUBE",
+      "action_type": "YouTube: Forward 10s",
       "action_value": "D:/ESP",
       "color": "#7d0d82"
     },
     "BTN2": {
-      "label": "Button 2",
-      "action_type": "Do Nothing",
+      "label": "YOUTUBE",
+      "action_type": "YouTube: Rewind 10s",
       "action_value": "",
-      "color": "#2a2a3e"
+      "color": "#800080"
     },
     "BTN3": {
-      "label": "Button 3",
-      "action_type": "Do Nothing",
-      "action_value": "",
-      "color": "#2a2a3e"
+      "label": "HRA BE",
+      "action_type": "Custom Command",
+      "action_value": "{\"cmd\": \"code .\", \"workdir\": \"D:\\\\hra_be\", \"keep_open\": false}",
+      "color": "#000080"
     },
     "BTN4": {
-      "label": "Button 4",
-      "action_type": "Do Nothing",
-      "action_value": "",
-      "color": "#2a2a3e"
+      "label": "Docker",
+      "action_type": "Launch Application",
+      "action_value": "C:/Users/lovepreet dazzell/AppData/Local/Programs/DockerDesktop/Docker Desktop.exe",
+      "color": "#0080ff"
     },
     "BTN5": {
-      "label": "Button 5",
-      "action_type": "Do Nothing",
-      "action_value": "",
-      "color": "#2a2a3e"
+      "label": "Postman",
+      "action_type": "Launch Application",
+      "action_value": "C:/Users/lovepreet dazzell/AppData/Local/Postman/Postman.exe",
+      "color": "#ff8040"
     },
     "BTN6": {
-      "label": "Button 6",
-      "action_type": "Do Nothing",
-      "action_value": "",
-      "color": "#2a2a3e"
+      "label": "SCRIPTS",
+      "action_type": "Custom Command",
+      "action_value": "{\"cmd\": \"code .\", \"workdir\": \"C:\\\\Users\\\\lovepreet dazzell\\\\OneDrive\\\\Desktop\\\\SCRIPTS\\\\python scripts\", \"keep_open\": false}",
+      "color": "#ffff00"
     },
     "BTN7": {
-      "label": "Button 7",
-      "action_type": "Do Nothing",
-      "action_value": "",
-      "color": "#2a2a3e"
+      "label": "i4i FE",
+      "action_type": "Custom Command",
+      "action_value": "{\"cmd\": \"npm run dev\", \"workdir\": \"D:\\\\i4invest\\\\i4invest_fe\", \"keep_open\": true}",
+      "color": "#00ff00"
     },
     "BTN8": {
-      "label": "Button 8",
-      "action_type": "Do Nothing",
-      "action_value": "",
-      "color": "#2a2a3e"
+      "label": "AWS PROD Terminal",
+      "action_type": "Run CMD Script / BAT file",
+      "action_value": "D:/i4invest/bash scripts/Prod.bat",
+      "color": "#cd0532"
     },
     "BTN9": {
-      "label": "Button 9",
-      "action_type": "Do Nothing",
-      "action_value": "",
-      "color": "#2a2a3e"
+      "label": "AWS DEV TERMINAL",
+      "action_type": "Run CMD Script / BAT file",
+      "action_value": "D:/i4invest/bash scripts/Dev.bat",
+      "color": "#0080c0"
     },
     "BTN10": {
-      "label": "Button 10",
-      "action_type": "Do Nothing",
-      "action_value": "",
-      "color": "#2a2a3e"
+      "label": "AWS TEST ENV",
+      "action_type": "Run CMD Script / BAT file",
+      "action_value": "D:/i4invest/bash scripts/Test ENV.bat",
+      "color": "#ff00ff"
     },
     "BTN11": {
-      "label": "Button 11",
-      "action_type": "Do Nothing",
-      "action_value": "",
-      "color": "#2a2a3e"
+      "label": "i4i BE",
+      "action_type": "Custom Command",
+      "action_value": "{\"cmd\": \"code .\", \"workdir\": \"D:\\\\i4invest\\\\dev\", \"keep_open\": false}",
+      "color": "#808000"
     },
     "BTN12": {
-      "label": "Button 12",
-      "action_type": "Do Nothing",
-      "action_value": "",
-      "color": "#2a2a3e"
+      "label": "AWS TEST TERMINAL",
+      "action_type": "Run CMD Script / BAT file",
+      "action_value": "D:/i4invest/bash scripts/Test.bat",
+      "color": "#800000"
     },
     "BTN13": {
-      "label": "Button 13",
-      "action_type": "Do Nothing",
-      "action_value": "",
-      "color": "#2a2a3e"
+      "label": "AWS PROD ENV",
+      "action_type": "Run CMD Script / BAT file",
+      "action_value": "D:/i4invest/bash scripts/Prod ENV.bat",
+      "color": "#ffff00"
     },
     "BTN14": {
       "label": "Button 14",

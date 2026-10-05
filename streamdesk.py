@@ -135,15 +135,14 @@ BROWSER_EXE = {"chrome.exe","msedge.exe","firefox.exe",
 
 ACTION_TYPES = [
     "Launch Application",
-    "Open Folder in VS Code",
     "Run CMD Script / BAT file",
+    "Custom Command",
     "Media: Play/Pause",
     "Media: Next Track",
     "Media: Previous Track",
     "YouTube: Forward 10s",
     "YouTube: Rewind 10s",
     "Set Volume",
-    "Custom Command",
     "Do Nothing",
 ]
 
@@ -154,10 +153,11 @@ NO_VALUE_TYPES = {
 
 ACTION_HINTS = {
     "Launch Application":        "Full path to .exe, or any shell command.",
-    "Open Folder in VS Code":    "Full folder path — opens as VS Code workspace.",
     "Run CMD Script / BAT file": "Full path to a .bat/.cmd — runs in new console.",
     "Set Volume":                "0-100  (requires nircmd.exe).",
-    "Custom Command":            "Any shell command.",
+    "Custom Command":            "One command per line — runs in sequence. "
+                                 "Set Working Dir so 'code .' and 'npm run dev' resolve correctly. "
+                                 "Use 'start chrome https://youtube.com' to open a URL.",
     "YouTube: Forward 10s":      "Sends L key — YouTube must be the active window.",
     "YouTube: Rewind 10s":       "Sends J key — YouTube must be the active window.",
     "Media: Play/Pause":         "System-wide media key — no admin needed.",
@@ -170,14 +170,14 @@ ACTION_EXAMPLES = {
     "Launch Application":
         'e.g.  "C:\\Program Files\\Notepad++\\notepad++.exe"\n'
         'or    chrome.exe',
-    "Open Folder in VS Code":
-        'e.g.  D:\\my_project',
     "Run CMD Script / BAT file":
         'e.g.  C:\\Users\\me\\Desktop\\scripts\\dev.bat',
     "Set Volume":
         'e.g.  50  (50%)   |   0 = mute   |   100 = max',
     "Custom Command":
-        'e.g.  start chrome https://github.com',
+        'Line 1:  code .\n'
+        'Line 2:  npm run dev\n'
+        '— each line is one command, runs in order. Set Working Dir to your project folder.',
 }
 
 DEFAULT_CONFIG = {
@@ -200,8 +200,20 @@ DEFAULT_CONFIG = {
     },
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  THEME
+# Default actions for buttons whose ESP sends MEDIA:* commands directly.
+# "esp_cmd"    — the raw UDP string the ESP sends for this physical button
+# "action_type/value" — what fires when the button action is still "Do Nothing"
+# To override: assign any non-"Do Nothing" action to the button in the GUI.
+BTN_DEFAULTS: dict[str, dict] = {
+    "BTN14": {"esp_cmd": "MEDIA:PREV",      "action_type": "Media: Previous Track", "action_value": ""},
+    "BTN15": {"esp_cmd": "MEDIA:PLAYPAUSE", "action_type": "Media: Play/Pause",     "action_value": ""},
+    "BTN16": {"esp_cmd": "MEDIA:NEXT",      "action_type": "Media: Next Track",     "action_value": ""},
+}
+
+# Reverse map: esp_cmd → btn_id  (built once at module level)
+_ESP_CMD_TO_BTN: dict[str, str] = {v["esp_cmd"]: k for k, v in BTN_DEFAULTS.items()}
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 DARK_BG   = "#0f0f1a"
@@ -274,19 +286,6 @@ def is_youtube_active() -> bool:
         return proc.name().lower() in BROWSER_EXE
     except Exception:
         return False
-
-def find_vscode() -> str:
-    for name in ("code", "code.cmd"):
-        found = shutil.which(name)
-        if found:
-            return found
-    for c in [
-        os.path.expandvars(r"%LOCALAPPDATA%\Programs\Microsoft VS Code\bin\code.cmd"),
-        r"C:\Program Files\Microsoft VS Code\bin\code.cmd",
-    ]:
-        if os.path.exists(c):
-            return c
-    return ""
 
 def set_volume(level: int):
     try:
@@ -392,11 +391,20 @@ def execute_action(cfg: dict, command: str):
             log.error(f">>> Bad VOL value: {command!r}")
         return
 
-    # Special media commands
+    # Special media commands — but first check if the physical button that
+    # owns this ESP command has been overridden with a custom action.
+    if command in _ESP_CMD_TO_BTN:
+        btn_id  = _ESP_CMD_TO_BTN[command]
+        btn_cfg = cfg.get("buttons", {}).get(btn_id, {})
+        atype   = btn_cfg.get("action_type", "Do Nothing")
+        if atype != "Do Nothing":
+            log.info(f">>> {command} overridden by {btn_id} action: {atype!r}")
+            _run_action(atype, btn_cfg.get("action_value", ""))
+            return
+        # else fall through to default special handler below
+
     spec = cfg.get("special", {}).get(command)
-    # log.info(f">>> special lookup [{command!r}] = {spec}")
     if spec:
-        # log.info(f">>> dispatching SPECIAL: {spec}")
         _run_action(spec["action_type"], spec.get("action_value", ""))
         return
 
@@ -405,8 +413,14 @@ def execute_action(cfg: dict, command: str):
     btn = buttons.get(command)
     log.info(f">>> button lookup [{command!r}] = {btn}")
     if btn:
-        # log.info(f">>> dispatching BUTTON type={btn['action_type']!r}")
-        _run_action(btn["action_type"], btn.get("action_value", ""))
+        atype = btn["action_type"]
+        # If no custom action set, check for a default (e.g. BTN14-16 → media keys)
+        if atype == "Do Nothing" and command in BTN_DEFAULTS:
+            fallback = BTN_DEFAULTS[command]
+            log.info(f">>> BTN default fallback for {command}: {fallback['action_type']}")
+            _run_action(fallback["action_type"], fallback.get("action_value", ""))
+        else:
+            _run_action(atype, btn.get("action_value", ""))
         return
 
     # log.error(f">>> UNRECOGNISED COMMAND: {command!r}")
@@ -425,16 +439,6 @@ def _run_action(atype: str, aval: str):
             else:
                 log.warning("Launch Application: no path configured")
 
-        elif atype == "Open Folder in VS Code":
-            if aval:
-                code = find_vscode()
-                if code:
-                    subprocess.Popen([code, aval], shell=False)
-                else:
-                    log.error("VS Code not found")
-            else:
-                log.warning("VS Code action: no folder configured")
-
         elif atype == "Run CMD Script / BAT file":
             if aval:
                 subprocess.Popen(
@@ -443,6 +447,58 @@ def _run_action(atype: str, aval: str):
                 )
             else:
                 log.warning("Run CMD: no script configured")
+
+        elif atype == "Custom Command":
+            # action_value is JSON: {"cmd": "line1\nline2\n...", "workdir": "...", "keep_open": true/false}
+            # or plain string for backwards-compat
+            if not aval:
+                log.warning("Custom Command: empty")
+            else:
+                try:
+                    opts = json.loads(aval)
+                    cmd_raw   = opts.get("cmd", "")
+                    workdir   = opts.get("workdir", "").strip() or None
+                    keep_open = opts.get("keep_open", True)
+                except (json.JSONDecodeError, TypeError):
+                    cmd_raw   = aval
+                    workdir   = None
+                    keep_open = True
+
+                # Build a single CMD string: join non-empty lines with &&
+                lines = [l.strip() for l in cmd_raw.splitlines() if l.strip()]
+                if not lines:
+                    log.warning("Custom Command: no commands entered")
+                else:
+                    # Fix bare "cd <path>" → "cd /d <path>" so cross-drive changes work.
+                    # Also: if workdir is empty and first line is a cd, extract that path
+                    # as the working directory and drop the cd line entirely (cleaner).
+                    fixed = []
+                    for line in lines:
+                        parts = line.split(None, 2)   # ["cd", "D:\\path"] or ["cd", "/d", "..."]
+                        if parts and parts[0].lower() == "cd":
+                            if len(parts) >= 2 and parts[1].lower() != "/d":
+                                # bare cd — promote to cd /d and also use as cwd if not set
+                                path = parts[1]
+                                if not workdir:
+                                    workdir = path
+                                    # skip the cd line; cwd handles it
+                                    continue
+                                else:
+                                    line = f"cd /d {path}"
+                        fixed.append(line)
+
+                    if not fixed:
+                        log.warning("Custom Command: all lines were cd — using workdir only, no commands left")
+                    else:
+                        joined = " && ".join(fixed)
+                        flag   = "/k" if keep_open else "/c"
+                        subprocess.Popen(
+                            ["cmd", flag, joined],
+                            cwd=workdir or None,
+                            creationflags=subprocess.CREATE_NEW_CONSOLE,
+                            shell=False,
+                        )
+                        log.info(f"Custom Command launched: {fixed}  cwd={workdir!r}  keep={keep_open}")
 
         elif atype == "Media: Play/Pause":
             # log.info(">>> Calling send_media_playpause() via SendInput ...")
@@ -484,12 +540,6 @@ def _run_action(atype: str, aval: str):
                 set_volume(int(aval))
             except ValueError:
                 log.error(f"Set Volume: bad value {aval!r}")
-
-        elif atype == "Custom Command":
-            if aval:
-                subprocess.Popen(aval, shell=True)
-            else:
-                log.warning("Custom Command: empty")
 
         else:
             log.warning(f"Unknown action type: {atype!r}")
@@ -642,7 +692,7 @@ class ButtonEditor(tk.Toplevel):
         super().__init__(parent)
         self.title(f"Edit {btn_id}")
         self.configure(bg=DARK_BG)
-        self.resizable(True, False)
+        self.resizable(True, True)
         self.grab_set()
         self._btn_id  = btn_id
         self._btn_cfg = dict(btn_cfg)
@@ -680,6 +730,8 @@ class ButtonEditor(tk.Toplevel):
                           values=ACTION_TYPES, state="readonly", width=42)
         cb.pack(side="left", fill="x", expand=True)
         cb.bind("<<ComboboxSelected>>", self._refresh)
+        # Style the dropdown popdown list (plain tk widget, must be done after mapping)
+        self.after(50, lambda: self._style_combobox_popdown(cb))
 
         # Hint
         self._hint_var = tk.StringVar()
@@ -688,14 +740,13 @@ class ButtonEditor(tk.Toplevel):
                  font=("Segoe UI", 9, "italic"),
                  wraplength=610, justify="left").pack(fill="x", padx=22, pady=(2, 0))
 
-        # Value row
+        # ── Value row (command / path) — used by non-Custom types ─────────
         self._val_frame = tk.Frame(self, bg=DARK_BG)
         self._val_frame.pack(fill="x", padx=22, pady=(6, 0))
         tk.Label(self._val_frame, text="Path / Value:",
                  bg=DARK_BG, fg=TEXT_SUB,
                  font=FONT_LABEL, width=16, anchor="w").grid(row=0, column=0, sticky="w")
-        self._aval_var = tk.StringVar(
-            value=self._btn_cfg.get("action_value", ""))
+        self._aval_var = tk.StringVar(value="")
         tk.Entry(self._val_frame, textvariable=self._aval_var,
                  bg=CARD_BG, fg=TEXT_MAIN,
                  insertbackground=TEXT_MAIN, relief="flat",
@@ -704,6 +755,63 @@ class ButtonEditor(tk.Toplevel):
                   relief="flat", font=FONT_BTN, cursor="hand2",
                   command=self._browse).grid(row=0, column=2)
         self._val_frame.columnconfigure(1, weight=1)
+
+        # ── Custom Command frame ────────────────────────────────────────────
+        self._custom_frame = tk.Frame(self, bg=DARK_BG)
+
+        # Multi-line commands box
+        tk.Label(self._custom_frame, text="Commands\n(one per line):",
+                 bg=DARK_BG, fg=TEXT_SUB, font=FONT_LABEL,
+                 justify="left").pack(anchor="w", pady=(4, 2))
+        self._cmd_text = tk.Text(
+            self._custom_frame,
+            bg=CARD_BG, fg=TEXT_MAIN,
+            insertbackground=TEXT_MAIN, relief="flat",
+            font=FONT_MONO, height=5, wrap="none",
+            undo=True,
+        )
+        self._cmd_text.pack(fill="x", expand=False)
+        tk.Label(self._custom_frame,
+                 text="Each line runs in order  (code .  →  npm run dev  →  …)",
+                 bg=DARK_BG, fg=TEXT_SUB, font=("Consolas", 8)).pack(anchor="w")
+
+        # Working directory row
+        wd_row = tk.Frame(self._custom_frame, bg=DARK_BG)
+        wd_row.pack(fill="x", pady=(8, 0))
+        tk.Label(wd_row, text="Working Dir:", bg=DARK_BG, fg=TEXT_SUB,
+                 font=FONT_LABEL, width=16, anchor="w").pack(side="left")
+        self._workdir_var = tk.StringVar(value="")
+        tk.Entry(wd_row, textvariable=self._workdir_var,
+                 bg=CARD_BG, fg=TEXT_MAIN,
+                 insertbackground=TEXT_MAIN, relief="flat",
+                 font=FONT_MONO).pack(side="left", fill="x", expand=True, ipady=5, padx=(0, 8))
+        tk.Button(wd_row, text=" Browse… ", bg=ACCENT2, fg=TEXT_MAIN,
+                  relief="flat", font=FONT_BTN, cursor="hand2",
+                  command=self._browse_workdir).pack(side="left")
+
+        # Keep open checkbox
+        ko_row = tk.Frame(self._custom_frame, bg=DARK_BG)
+        ko_row.pack(fill="x", pady=(6, 0))
+        self._keep_open_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(ko_row,
+                       text="Keep CMD window open after all commands finish  (uncheck to auto-close)",
+                       variable=self._keep_open_var,
+                       bg=DARK_BG, fg=TEXT_MAIN, selectcolor=CARD_BG,
+                       activebackground=DARK_BG, activeforeground=TEXT_MAIN,
+                       font=FONT_LABEL).pack(side="left")
+
+        # ── Populate fields from saved config ──────────────────────────────
+        raw = self._btn_cfg.get("action_value", "")
+        if self._atype_var.get() == "Custom Command" and raw:
+            try:
+                opts = json.loads(raw)
+                self._cmd_text.insert("1.0", opts.get("cmd", ""))
+                self._workdir_var.set(opts.get("workdir", ""))
+                self._keep_open_var.set(opts.get("keep_open", True))
+            except (json.JSONDecodeError, TypeError):
+                self._cmd_text.insert("1.0", raw)  # legacy plain string
+        else:
+            self._aval_var.set(raw)
 
         # Example
         self._ex_var = tk.StringVar()
@@ -742,8 +850,16 @@ class ButtonEditor(tk.Toplevel):
         self._ex_var.set(ACTION_EXAMPLES.get(atype, ""))
         if atype in NO_VALUE_TYPES:
             self._val_frame.pack_forget()
+            self._custom_frame.pack_forget()
+        elif atype == "Custom Command":
+            # Hide the simple single-line entry; show the rich custom frame instead
+            self._val_frame.pack_forget()
+            self._custom_frame.pack(fill="x", padx=22, pady=(6, 0))
+            self.geometry("660x580")
         else:
+            self._custom_frame.pack_forget()
             self._val_frame.pack(fill="x", padx=22, pady=(6, 0))
+            self.geometry("660x440")
 
     def _browse(self):
         atype = self._atype_var.get()
@@ -760,6 +876,25 @@ class ButtonEditor(tk.Toplevel):
         if p:
             self._aval_var.set(p)
 
+    def _style_combobox_popdown(self, cb):
+        """Dark-theme the dropdown listbox that ttk.Combobox creates as a tk widget."""
+        try:
+            popdown = self.tk.eval(f"ttk::combobox::PopdownWindow {cb}")
+            listbox = f"{popdown}.f.l"
+            self.tk.eval(f"{listbox} configure "
+                         f"-background {CARD_BG} "
+                         f"-foreground {TEXT_MAIN} "
+                         f"-selectbackground {ACCENT2} "
+                         f"-selectforeground {TEXT_MAIN} "
+                         f"-font {{Segoe UI 9}}")
+        except Exception:
+            pass  # non-fatal if it fails on some tk versions
+
+    def _browse_workdir(self):
+        p = filedialog.askdirectory(title="Select Working Directory")
+        if p:
+            self._workdir_var.set(p.replace("/", "\\"))
+
     def _pick_color(self):
         c = colorchooser.askcolor(color=self._color, title="Button Color")
         if c and c[1]:
@@ -767,10 +902,22 @@ class ButtonEditor(tk.Toplevel):
             self._cprev.config(bg=self._color)
 
     def _save(self):
-        self._btn_cfg["label"]        = self._label_var.get().strip() or self._btn_id
-        self._btn_cfg["action_type"]  = self._atype_var.get()
-        self._btn_cfg["action_value"] = self._aval_var.get().strip()
-        self._btn_cfg["color"]        = self._color
+        atype = self._atype_var.get()
+        self._btn_cfg["label"]       = self._label_var.get().strip() or self._btn_id
+        self._btn_cfg["action_type"] = atype
+        self._btn_cfg["color"]       = self._color
+
+        if atype == "Custom Command":
+            # Read all lines from the Text widget (strip trailing newline tk adds)
+            cmd_text = self._cmd_text.get("1.0", "end-1c").strip()
+            self._btn_cfg["action_value"] = json.dumps({
+                "cmd":       cmd_text,
+                "workdir":   self._workdir_var.get().strip(),
+                "keep_open": self._keep_open_var.get(),
+            })
+        else:
+            self._btn_cfg["action_value"] = self._aval_var.get().strip()
+
         self._on_save(self._btn_id, self._btn_cfg)
         self.destroy()
 
@@ -792,8 +939,15 @@ class StreamDeskApp:
         style.theme_use("clam")
         style.configure("TCombobox",
                         fieldbackground=CARD_BG, background=CARD_BG,
-                        foreground=TEXT_MAIN, selectbackground=CARD_BG,
-                        selectforeground=TEXT_MAIN, borderwidth=0)
+                        foreground=TEXT_MAIN, selectbackground=ACCENT2,
+                        selectforeground=TEXT_MAIN, borderwidth=0,
+                        arrowcolor=TEXT_MAIN, insertcolor=TEXT_MAIN)
+        style.map("TCombobox",
+                  fieldbackground=[("readonly", CARD_BG), ("disabled", DARK_BG)],
+                  foreground=[("readonly", TEXT_MAIN), ("disabled", TEXT_SUB)],
+                  selectbackground=[("readonly", ACCENT2)],
+                  selectforeground=[("readonly", TEXT_MAIN)],
+                  background=[("active", CARD_BG), ("pressed", CARD_BG)])
         style.configure("TNotebook",     background=DARK_BG, borderwidth=0)
         style.configure("TNotebook.Tab", background=PANEL_BG, foreground=TEXT_SUB,
                         padding=[14, 6], font=FONT_SUB)
@@ -891,6 +1045,11 @@ class StreamDeskApp:
         color = bcfg.get("color", "#2a2a3e")
         atype = bcfg.get("action_type", "Do Nothing")
         label = bcfg.get("label", bid)
+
+        # For buttons with a media default, show what fires when action is Do Nothing
+        default_info = BTN_DEFAULTS.get(bid)
+        is_using_default = (atype == "Do Nothing") and (default_info is not None)
+
         card  = tk.Frame(parent, bg=CARD_BG, relief="flat",
                          highlightbackground=BORDER, highlightthickness=1,
                          cursor="hand2")
@@ -903,9 +1062,20 @@ class StreamDeskApp:
                        font=("Segoe UI", 10, "bold"),
                        wraplength=160, justify="left")
         lbl.pack(anchor="w")
-        tk.Label(inner, text=atype, bg=CARD_BG,
-                 fg=ACCENT if atype != "Do Nothing" else TEXT_SUB,
-                 font=FONT_LABEL, wraplength=160, justify="left").pack(anchor="w")
+
+        if is_using_default:
+            # Show the default action in a muted style with a note
+            tk.Label(inner, text=default_info["action_type"], bg=CARD_BG,
+                     fg="#ffaa44", font=FONT_LABEL,
+                     wraplength=160, justify="left").pack(anchor="w")
+            tk.Label(inner, text="default — override in editor",
+                     bg=CARD_BG, fg=TEXT_SUB,
+                     font=("Segoe UI", 7, "italic")).pack(anchor="w")
+        else:
+            tk.Label(inner, text=atype, bg=CARD_BG,
+                     fg=ACCENT if atype != "Do Nothing" else TEXT_SUB,
+                     font=FONT_LABEL, wraplength=160, justify="left").pack(anchor="w")
+
         for w in [card, inner, lbl] + list(card.winfo_children()):
             w.bind("<Double-Button-1>", lambda e, b=bid: self._edit_btn(b))
             w.bind("<Enter>",  lambda e, c=card: c.config(highlightbackground=ACCENT))
@@ -1142,7 +1312,11 @@ class StreamDeskApp:
             "Media keys use Windows SendInput — NO admin required.\n"
             "Volume requires nircmd.exe (Settings → Download).\n\n"
             f"Log file:    {LOG_FILE}\n"
-            f"Config file: {CONFIG_FILE}"
+            f"Config file: {CONFIG_FILE}\n\n"
+
+            "Designed by Love dazzell\n"
+            "Github : https://github.com/Lovedazzell"
+            
         )
         tk.Label(inner, text=info, bg=DARK_BG, fg=TEXT_SUB,
                  font=("Consolas", 9), justify="left").pack()

@@ -1,3 +1,5 @@
+@REM  run_as_admin.bat
+
 @echo off
 :: Launches StreamDesk with Administrator privileges (no install step)
 :: Terminal closes automatically once the app starts
